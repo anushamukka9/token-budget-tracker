@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "token-budget-tracker"
+version = "0.1.0"
+description = "Track LLM token usage and cost: per-model pricing, project budgets with alerts, usage aggregation, decorator API, CLI."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Anusha Mukka", email = "hello@anushamukka.com" }]
+keywords = ["llm", "tokens", "cost-tracking", "budgets", "observability"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+
+[project.urls]
+Homepage = "https://anushamukka.com"
+Repository = "https://github.com/anushamukka9/token-budget-tracker"
+
+[project.scripts]
+token-budget = "token_budget_tracker.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
