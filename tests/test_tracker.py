@@ -231,3 +231,66 @@ def test_cli_budgets_and_prices(tmp_path, capsys):
 def test_cli_parser_requires_subcommand():
     with pytest.raises(SystemExit):
         build_parser().parse_args([])
+
+
+# ---- CSV export ------------------------------------------------------
+def test_export_csv_roundtrip(tracker, tmp_path):
+    import csv
+    import json as jsonlib
+
+    tracker.record("gpt-4o-mini", 1000, 500, project="research", team="ml",
+                   metadata={"run": "a"})
+    tracker.record("claude-3-5-haiku", 200, 100, project="other")
+    path = str(tmp_path / "usage.csv")
+    assert tracker.export_csv(path) == 2
+    with open(path, newline="", encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh))
+    assert len(rows) == 2
+    assert rows[0]["model"] == "gpt-4o-mini"
+    assert rows[0]["input_tokens"] == "1000"
+    assert rows[0]["output_tokens"] == "500"
+    assert rows[0]["total_tokens"] == "1500"
+    assert rows[0]["project"] == "research"
+    assert rows[0]["team"] == "ml"
+    assert float(rows[0]["cost_usd"]) == pytest.approx(0.45)
+    assert jsonlib.loads(rows[0]["metadata"]) == {"run": "a"}
+    assert rows[0]["iso_time"]  # human-readable local timestamp present
+
+
+def test_export_csv_query_filter(tracker, tmp_path):
+    tracker.record("gpt-4o-mini", 100, 0, project="a")
+    tracker.record("gpt-4o-mini", 100, 0, project="b")
+    path = str(tmp_path / "a.csv")
+    assert tracker.export_csv(path, project="a") == 1
+    path2 = str(tmp_path / "none.csv")
+    assert tracker.export_csv(path2, project="nope") == 0
+
+
+def test_cli_export(tmp_path, capsys):
+    d = str(tmp_path)
+    assert main(["--data-dir", d, "log", "--model", "gpt-4o-mini",
+                 "--input-tokens", "100", "--output-tokens", "50",
+                 "--project", "exp"]) == 0
+    assert main(["--data-dir", d, "log", "--model", "gpt-4o-mini",
+                 "--input-tokens", "10", "--output-tokens", "5",
+                 "--project", "other"]) == 0
+    out_csv = str(tmp_path / "usage.csv")
+    assert main(["--data-dir", d, "export", "--output", out_csv]) == 0
+    assert "exported 2 usage records" in capsys.readouterr().out
+    out_proj = str(tmp_path / "exp.csv")
+    assert main(["--data-dir", d, "export", "--output", out_proj,
+                 "--project", "exp"]) == 0
+    import csv as csvlib
+    with open(out_proj, newline="", encoding="utf-8") as fh:
+        rows = list(csvlib.DictReader(fh))
+    assert len(rows) == 1
+    assert rows[0]["project"] == "exp"
+
+
+def test_cli_prices_list_labels_approximate(tmp_path, capsys):
+    d = str(tmp_path)
+    assert main(["--data-dir", d, "prices", "list"]) == 0
+    out = capsys.readouterr().out
+    assert "Approximate" in out
+    assert "[approx]" in out
+    assert "token-budget prices add" in out
