@@ -4,13 +4,14 @@
 team / app), prices it with a per-model price table, enforces budgets with
 alerts, and aggregates spend by day, model, project, team, or app. Data lives
 in `~/.token_budget_tracker/` by default (`usage.jsonl`, `budgets.json`,
-`prices.json`) — plain JSON you can inspect or back up yourself.
+`prices.json`) - plain JSON you can inspect or back up yourself.
 
 ## 1. Pricing
 
-Built-in indicative prices cover common OpenAI / Anthropic / Google /
-DeepSeek / Mistral / Llama models. They are starting points — verify current
-rates with your provider and override what you use:
+Built-in prices cover common OpenAI / Anthropic / Google / DeepSeek /
+Mistral / Llama models, but they are **approximate public rates, not
+quotes** - providers change pricing, so verify current rates with your
+provider and override the models you actually use:
 
 ```python
 from token_budget_tracker import UsageTracker
@@ -21,7 +22,9 @@ t.add_model("my-fine-tune", input_per_1k=1.25, output_per_1k=5.0,
 t.prices.cost("gpt-4o-mini", input_tokens=1000, output_tokens=500)
 ```
 
-The price table persists to `prices.json` automatically.
+The price table persists to `prices.json` automatically. `token-budget
+prices list` labels built-in entries `[approx]` and reminds you to verify
+them.
 
 ## 2. Recording usage
 
@@ -32,7 +35,7 @@ Three equivalent ways:
 t.record("gpt-4o-mini", input_tokens=1200, output_tokens=300,
          project="research", team="ml", app="rag-prototype")
 
-# b) decorator — return token counts from the wrapped function
+# b) decorator - return token counts from the wrapped function
 @t.track(model="gpt-4o-mini", project="research")
 def summarize(text):
     resp = llm.complete(text)          # your call
@@ -40,7 +43,7 @@ def summarize(text):
             "input_tokens": resp.usage.prompt_tokens,
             "output_tokens": resp.usage.completion_tokens}
 
-# c) context manager — full control
+# c) context manager - full control
 with t.track(model="claude-3-5-haiku", project="research") as call:
     resp = llm.complete(prompt)
     call.set_usage(resp.usage.prompt_tokens, resp.usage.completion_tokens)
@@ -61,6 +64,10 @@ t.budget_status("research-monthly")
 
 events = t.check_budgets()   # also runs automatically after each record()
 ```
+
+See `examples/budget_alerts.py` for a runnable end-to-end demo: custom
+alert handler, warn then breach crossings, per-project rollup, and CSV
+export.
 
 When spend crosses `warn_at` (default 80%) a `warn` alert fires; at 100% a
 `breach` alert fires. The default handler prints to stdout. Plug in your own:
@@ -86,6 +93,20 @@ print(text_summary(t))
 open("report.html", "w").write(html_summary(t, project="research"))
 ```
 
+### CSV export
+
+Dump the raw usage log to CSV for spreadsheets, finance, or BI tools:
+
+```python
+t.export_csv("usage.csv")                        # everything
+t.export_csv("research.csv", project="research") # filtered
+t.export_csv("mini.csv", model="gpt-4o-mini")
+```
+
+Columns: `timestamp`, `iso_time`, `model`, `input_tokens`, `output_tokens`,
+`total_tokens`, `project`, `team`, `app`, `cost_usd`, `metadata` (as JSON).
+Returns the number of rows written.
+
 ## 5. CLI
 
 ```bash
@@ -102,6 +123,9 @@ token-budget summary --format html --output report.html
 
 token-budget prices list
 token-budget prices add my-fine-tune --input-per-1k 1.25 --output-per-1k 5.0
+
+token-budget export --output usage.csv
+token-budget export --output research.csv --project research
 ```
 
 Pass `--data-dir <dir>` to any command to use a different data directory
