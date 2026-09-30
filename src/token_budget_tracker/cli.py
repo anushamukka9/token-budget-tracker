@@ -5,6 +5,7 @@ Subcommands:
   budgets    list/set/remove budgets, or check them against current spend
   summary    print a text dashboard (or write an HTML report)
   prices     list/add model prices
+  export     export usage records to CSV
 """
 
 from __future__ import annotations
@@ -96,13 +97,33 @@ def cmd_summary(args) -> int:
     return 0
 
 
+def cmd_export(args) -> int:
+    t = _tracker(args)
+    if args.format != "csv":
+        print(f"error: unsupported export format {args.format!r} (only csv)",
+              file=sys.stderr)
+        return 2
+    query = {}
+    if args.project:
+        query["project"] = args.project
+    if args.model:
+        query["model"] = args.model
+    n = t.export_csv(args.output, **query)
+    print(f"exported {n} usage records to {args.output}")
+    return 0
+
+
 def cmd_prices(args) -> int:
     t = _tracker(args)
     action = args.price_action
     if action == "list":
+        print("# Approximate built-in prices (USD per 1K tokens).")
+        print("# Verify current rates with your provider; override any model with:")
+        print("#   token-budget prices add <model> --input-per-1k X --output-per-1k Y")
         for name in sorted(t.prices):
             p = t.prices.get(name)
-            print(f"{name:<24} in ${p.input_per_1k:>7.2f}/1K  out ${p.output_per_1k:>7.2f}/1K")
+            tag = " [approx]" if p.notes == "built-in default" else ""
+            print(f"{name:<24} in ${p.input_per_1k:>7.2f}/1K  out ${p.output_per_1k:>7.2f}/1K{tag}")
         return 0
     if action == "add":
         t.add_model(args.model, args.input_per_1k, args.output_per_1k, notes=args.notes or "")
@@ -158,6 +179,14 @@ def build_parser() -> argparse.ArgumentParser:
     pa.add_argument("--output-per-1k", type=float, required=True)
     pa.add_argument("--notes", default="")
     pp.set_defaults(func=cmd_prices)
+
+    pe = sub.add_parser("export", help="export usage records to a file")
+    pe.add_argument("--output", required=True, help="destination file path")
+    pe.add_argument("--format", default="csv", choices=["csv"],
+                    help="export format")
+    pe.add_argument("--project", default=None, help="only export this project")
+    pe.add_argument("--model", default=None, help="only export this model")
+    pe.set_defaults(func=cmd_export)
 
     return p
 
