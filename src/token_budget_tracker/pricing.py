@@ -1,7 +1,9 @@
 """Per-model pricing table (USD per 1,000 tokens).
 
-Prices are indicative defaults only (check your provider for current
-rates) and are trivially overridden by the user.
+Built-in prices are APPROXIMATE public rates, not a quote: they go stale
+when providers change pricing, so always verify current rates with your
+provider. Every entry is user-overridable via ``add_model()`` (or
+``token-budget prices add``), and overrides persist to ``prices.json``.
 """
 
 from __future__ import annotations
@@ -54,7 +56,12 @@ class UnknownModelError(KeyError):
 
 
 class ModelPriceTable:
-    """User-extensible per-model price table."""
+    """User-extensible per-model price table.
+
+    Built-in entries are approximate and marked with notes="built-in
+    default"; verify rates with your provider and override with
+    :meth:`add_model`.
+    """
 
     def __init__(self, overrides: Optional[Dict[str, ModelPrice]] = None) -> None:
         self._prices: Dict[str, ModelPrice] = {
