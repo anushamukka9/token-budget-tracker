@@ -132,3 +132,45 @@ class UsageLog:
         return sum(
             r.cost_usd for r in (records if records is not None else self.iter_records())
         )
+
+    # ---- export ------------------------------------------------------
+    CSV_COLUMNS = (
+        "timestamp", "iso_time", "model", "input_tokens", "output_tokens",
+        "total_tokens", "project", "team", "app", "cost_usd", "metadata",
+    )
+
+    def export_csv(
+        self,
+        path: str,
+        records: Optional[Iterable[UsageRecord]] = None,
+    ) -> int:
+        """Write usage records to a CSV file; returns the rows written.
+
+        Columns: timestamp (epoch), iso_time (local), model, input/output/
+        total tokens, project, team, app, cost_usd, metadata (JSON).
+        """
+        import csv
+
+        rows = list(records) if records is not None else list(self.iter_records())
+        expanded = os.path.expanduser(path)
+        parent = os.path.dirname(os.path.abspath(expanded))
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        with open(expanded, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.writer(fh)
+            writer.writerow(self.CSV_COLUMNS)
+            for r in rows:
+                writer.writerow([
+                    r.timestamp,
+                    time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(r.timestamp)),
+                    r.model,
+                    r.input_tokens,
+                    r.output_tokens,
+                    r.total_tokens,
+                    r.project,
+                    r.team,
+                    r.app,
+                    f"{r.cost_usd:.6f}",
+                    json.dumps(r.metadata),
+                ])
+        return len(rows)
