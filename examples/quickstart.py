@@ -26,7 +26,7 @@ tracker.set_budget("research-cap", limit_usd=5.0, scope="project",
 tracker.record("gpt-4o-mini", input_tokens=1200, output_tokens=300,
                project="research", team="ml", app="rag-prototype")
 
-# 4. Or wrap a function — returning token counts logs them automatically.
+# 4. Or wrap a function - returning token counts logs them automatically.
 @tracker.track(model="gpt-4o-mini", project="research", team="ml")
 def fake_llm_call(prompt: str) -> dict:
     return {"answer": f"processed {len(prompt)} chars",
