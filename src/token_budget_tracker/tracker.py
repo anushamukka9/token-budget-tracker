@@ -220,6 +220,13 @@ class UsageTracker:
         records = self.log.query(**query_kwargs)
         return self.log.total_cost(records)
 
+    # ---- export ------------------------------------------------------
+    def export_csv(self, path: str, **query_kwargs) -> int:
+        """Export usage records to CSV (optionally filtered by query kwargs
+        like ``project=...`` or ``model=...``); returns rows written."""
+        records = self.log.query(**query_kwargs)
+        return self.log.export_csv(path, records=records)
+
 
 class _Proxy:
     """Lets tracker.track(...) act as both context manager and decorator."""
