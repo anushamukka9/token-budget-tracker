@@ -3,8 +3,8 @@
 Track LLM token usage and estimated cost across models: a user-extensible
 per-model price table, per-project/team/app budgets with warn/breach alerts,
 a JSONL usage log with aggregation (by day, model, project, team, app),
-text and HTML dashboard reports, a decorator/context-manager API for
-auto-recording calls, and a CLI.
+CSV export of raw usage records, text and HTML dashboard reports, a
+decorator/context-manager API for auto-recording calls, and a CLI.
 
 ## Install
 
@@ -39,7 +39,8 @@ with tracker.track(model="claude-3-5-haiku", project="research") as call:
 print(text_summary(tracker))
 ```
 
-See `examples/quickstart.py` (runnable) and `docs/usage.md` for the full guide.
+See `examples/quickstart.py` and `examples/budget_alerts.py` (both runnable)
+and `docs/usage.md` for the full guide.
 
 ## CLI
 
@@ -51,18 +52,19 @@ token-budget budgets set research-monthly --limit 50 \
 token-budget budgets check
 token-budget summary --format html --output report.html
 token-budget prices list
+token-budget export --output usage.csv --project research
 ```
 
 ## API
 
 | Symbol | Purpose |
 |---|---|
-| `UsageTracker` | Main entry point: `record`, `track`, `set_budget`, `budget_status`, `check_budgets`, `aggregate`, `total_cost` |
+| `UsageTracker` | Main entry point: `record`, `track`, `set_budget`, `budget_status`, `check_budgets`, `aggregate`, `total_cost`, `export_csv` |
 | `ModelPriceTable` | Per-model USD/1K-token prices; `add_model`, `cost`, `save`/`load` |
-| `UsageLog` / `UsageRecord` | Append-only JSONL log; `query`, `aggregate` by project/model/team/app/day |
+| `UsageLog` / `UsageRecord` | Append-only JSONL log; `query`, `aggregate` by project/model/team/app/day, `export_csv` |
 | `Budget` / `BudgetStore` | Spend caps per scope and period, persisted as JSON |
 | `text_summary` / `html_summary` | Dashboard reports |
-| `token_budget_tracker.cli:main` | `token-budget` console script |
+| `token_budget_tracker.cli:main` | `token-budget` console script (`log`, `budgets`, `summary`, `prices`, `export`) |
 
 ## Architecture
 
@@ -82,8 +84,10 @@ budgets and dispatches alerts through registered handlers (stdout by default;
 plug in Slack/email/webhooks). Budgets latch warn/breach flags so you get one
 alert per crossing; `reset_budget_flags()` clears them.
 
-Price defaults are indicative — verify current provider rates and override
-with `add_model()` or `token-budget prices add`.
+Price defaults are approximate public rates, not quotes - providers change
+pricing, so verify current rates and override with `add_model()` or
+`token-budget prices add`. `prices list` marks built-in entries `[approx]`
+to make this explicit.
 
 ## Development
 
@@ -93,6 +97,6 @@ python -m pytest -q
 
 ## License
 
-MIT — Copyright 2026 Anusha Mukka. See [LICENSE](LICENSE).
+MIT - Copyright 2026 Anusha Mukka. See [LICENSE](LICENSE).
 
-Author: Anusha Mukka — [anushamukka.com](https://anushamukka.com)
+Author: Anusha Mukka - [anushamukka.com](https://anushamukka.com)
