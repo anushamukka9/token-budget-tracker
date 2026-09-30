@@ -36,7 +36,7 @@ def text_summary(tracker: "UsageTracker", project: Optional[str] = None) -> str:
     s = _snapshot(tracker, project)
     lines = [
         "=" * 58,
-        "TOKEN BUDGET TRACKER — usage summary",
+        "TOKEN BUDGET TRACKER - usage summary",
         f"Generated : {s['generated']}",
         f"Scope     : {s['project']}",
         "-" * 58,
@@ -97,7 +97,7 @@ def html_summary(tracker: "UsageTracker", project: Optional[str] = None) -> str:
 
     return f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<title>Token Budget Tracker — usage summary</title>
+<title>Token Budget Tracker - usage summary</title>
 <style>
 body {{ font-family: system-ui, sans-serif; margin: 2rem; color: #222; }}
 h1 {{ font-size: 1.4rem; }} h2 {{ font-size: 1.1rem; margin-top: 1.6rem; }}
@@ -109,7 +109,7 @@ th {{ background: #f4f4f4; }}
 .bar {{ width: 160px; height: 12px; background: #eee; }}
 .fill {{ height: 12px; }}
 </style></head><body>
-<h1>Token Budget Tracker — usage summary</h1>
+<h1>Token Budget Tracker - usage summary</h1>
 <p>Generated {s['generated']} · scope: {s['project']}</p>
 <div>
 <span class="stat">Total cost<br><b>${s['total_cost']:.2f}</b></span>
